@@ -187,8 +187,7 @@ int open_uart(const char *device)
 	tcgetattr(uart, &uart_config);
 
 	/* Clear ONLCR flag (which appends a CR for every LF) */
-	uart_config.c_oflag &= ~OPOST;	//disable post processing
-//	uart_config.c_oflag &= ~ONLCR;
+  uart_config.c_oflag &= ~ONLCR;
 
 	/* Set baud rate */
 	if (cfsetispeed(&uart_config, speed) < 0 || cfsetospeed(&uart_config, speed) < 0) {
@@ -204,7 +203,6 @@ int open_uart(const char *device)
 
 	/* Activate single wire mode */
 	ioctl(uart, TIOCSSINGLEWIRE, SER_SINGLEWIRE_ENABLED);
-	tcflush(uart, TCIOFLUSH);	//flush input & output
 
 	return uart;
 }
@@ -271,7 +269,7 @@ int ap_hott_main(int argc, char *argv[])
 		      SCHED_PRIORITY_MAX - 5,
 		      2048,
 		      ap_hott_thread_main,
-		      (argv) ? (const char **)&argv[2] : (const char **)NULL);
+		      (argv) ? (char * const *)&argv[2] : (char * const *)NULL);
 		exit(0);
 	} else if (!strcmp(argv[1], "stop")) {
 		thread_should_exit = true;
