@@ -433,8 +433,9 @@ else
   ap_hott start -d /dev/ttyS1
 fi
 
+# It's important to disable d4 (-d4 /dev/null) because it's internally set to ttyS6
 echo Starting ArduPilot $deviceA $deviceC $deviceD
-if ArduPilot -d $deviceA -d2 $deviceC -d3 $deviceD start
+if ArduPilot -d $deviceA -d2 $deviceC -d3 $deviceD -d4 /dev/null start
 then
     echo ArduPilot started OK
 else
