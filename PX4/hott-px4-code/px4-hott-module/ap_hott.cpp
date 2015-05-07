@@ -55,7 +55,7 @@
 #define POST_WRITE_DELAY_IN_USECS   2000
 
 //HoTT alarm macro
-#define HOTT_ALARM_NUM(a) (a-0x40)
+#define HOTT_ALARM_NUM(a) (a - 0x40)
 #define ALTITUDE_HISTORY_DATA_COUNT 10
 
 //Min. time before low voltage alarm is triggered
@@ -68,7 +68,7 @@ struct _hott_alarm_event_T {
     uint8_t visual_alarm1;      //Visual alarm bitmask
     uint8_t visual_alarm2;      //Visual alarm bitmask
     uint8_t alarm_num;          //Alarm number 0..255 (A-Z)
-    uint8_t alarm_profile;      //profile id ie HOTT_TELEMETRY_EAM_SENSOR_ID
+    uint8_t alarm_profile;      //profile id ie EAM_SENSOR_ID
 };
 typedef struct _hott_alarm_event_T _hott_alarm_event;
 
@@ -376,10 +376,10 @@ int ap_hott_thread_main(int argc, char *argv[]) {
                 updateOrbs();
                 if(recv_req_id(uart, &mode, &moduleId) == OK) {
                     switch(mode) {
-                        case HOTT_TEXT_MODE_REQUEST_ID:
+                        case TEXT_MODE_REQUEST_ID:
                             hott_handle_text_mode(uart, moduleId);
                             break;
-                        case HOTT_BINARY_MODE_REQUEST_ID:
+                        case BINARY_MODE_REQUEST_ID:
                             hott_handle_binary_mode(uart, moduleId);
                             break;
                         default:
@@ -416,22 +416,22 @@ void hott_handle_text_mode(int uart, uint8_t moduleId) {
 
 void hott_handle_binary_mode(int uart, uint8_t moduleId) {
     switch(moduleId) {
-        case HOTT_TELEMETRY_GPS_SENSOR_ID:
+        case GPS_SENSOR_ID:
             hott_send_gps_msg(uart);
             break;
-        case HOTT_TELEMETRY_EAM_SENSOR_ID:
+        case EAM_SENSOR_ID:
             hott_send_eam_msg(uart);
             break;
-        case HOTT_TELEMETRY_VARIO_SENSOR_ID:
+        case VARIO_SENSOR_ID:
             hott_send_vario_msgs(uart);
             break;
-        case HOTT_TELEMETRY_GAM_SENSOR_ID:
+        case GAM_SENSOR_ID:
 //          warnx("GAM not supported yet");
             break;
-        case HOTT_TELEMETRY_AIRESC_SENSOR_ID:
+        case AIRESC_SENSOR_ID:
 //          warnx("AIRESC  not supported yet");
             break;
-        case HOTT_TELEMETRY_NO_SENSOR_ID:
+        case NO_SENSOR_ID:
 //          warnx("NO SENSOR?");
             break;
         default:
@@ -466,10 +466,10 @@ void hott_send_vario_msgs(int uart) {
     static int16_t min_altitude = 0;
 
     memset(&msg, 0, sizeof(struct HOTT_VARIO_MSG));
-    msg.start_byte = 0x7c;
-    msg.vario_sensor_id = HOTT_TELEMETRY_VARIO_SENSOR_ID;
-    msg.sensor_id = 0x90;
-    msg.stop_byte = 0x7d;
+    msg.start_byte      = BINARY_MODE_START_BYTE;
+    msg.vario_sensor_id = VARIO_SENSOR_ID;
+    msg.sensor_id       = VARIO_SENSOR_TEXT_ID;
+    msg.stop_byte       = BINARY_MODE_STOP_BYTE;
     
     (uint16_t &)msg.altitude_L = (ap_data.altitude_rel / 100)+500;  //send relative altitude
     //update alt. statistic
@@ -481,8 +481,8 @@ void hott_send_vario_msgs(int uart) {
         min_altitude = ap_data.altitude_rel;
     (int16_t &)msg.altitude_min_L = (min_altitude / 100)+500;
 
-    (int16_t &)msg.climbrate_L = 30000 + climbrate1s;
-    (int16_t &)msg.climbrate3s_L = 30000 + climbrate3s;
+    (int16_t &)msg.climbrate_L    = 30000 + climbrate1s;
+    (int16_t &)msg.climbrate3s_L  = 30000 + climbrate3s;
     (int16_t &)msg.climbrate10s_L = 30000 + climbrate10s;
 
     msg.compass_direction = ap_data.angle_compas / 2;
@@ -496,7 +496,7 @@ void hott_send_vario_msgs(int uart) {
         pArmedStr = (char *)ARMED_STR;
     }
     //clear line
-    memset(msg.text_msg,0x20,HOTT_VARIO_MSG_TEXT_LEN);
+    memset(msg.text_msg, 0x20, VARIO_MSG_TEXT_LEN);
     uint8_t len = strlen(pArmedStr);
     memcpy((uint8_t*)msg.text_msg, pArmedStr, len);
     memcpy((uint8_t*)&msg.text_msg[len+1], hott_flight_mode_strings[ap_data.control_mode], strlen(hott_flight_mode_strings[ap_data.control_mode]));
@@ -509,11 +509,10 @@ void hott_send_eam_msg(int uart) {
     static _hott_alarm_event e = {0,0,0,0,0,0}; //used to save visual alarm states
 
     memset(&msg, 0, sizeof(struct HOTT_EAM_MSG));
-    msg.start_byte = 0x7c;
-    msg.eam_sensor_id = HOTT_TELEMETRY_EAM_SENSOR_ID;
-    msg.sensor_id = 0xe0;
-    msg.stop_byte = 0x7d;
-    //end init
+    msg.start_byte    = BINARY_MODE_START_BYTE;
+    msg.eam_sensor_id = EAM_SENSOR_ID;
+    msg.sensor_id     = EAM_SENSOR_TEXT_ID;
+    msg.stop_byte     = BINARY_MODE_STOP_BYTE;
 
     (uint16_t &)msg.main_voltage_L = (uint16_t)(battery.voltage_v * (float)10.0);
     (uint16_t &)msg.current_L = (uint16_t)(battery.current_a * (float)10.0);
@@ -530,7 +529,7 @@ void hott_send_eam_msg(int uart) {
     msg.electric_sec = electric_time % 60;
          
     //check alarms
-    if(getAlarmForProfileId(HOTT_TELEMETRY_EAM_SENSOR_ID, e) != 0) {
+    if(getAlarmForProfileId(EAM_SENSOR_ID, e) != 0) {
         msg.warning_beeps = e.alarm_num;
     }
     msg.alarm_invers1 = e.visual_alarm1;
@@ -565,11 +564,11 @@ void hott_send_gps_msg(int uart) {
     struct HOTT_GPS_MSG msg;
 
     memset(&msg, 0, sizeof(struct HOTT_GPS_MSG));
-    msg.start_byte = 0x7c;
-    msg.gps_sensor_id = HOTT_TELEMETRY_GPS_SENSOR_ID;
-    msg.sensor_id = 0xa0;
-    msg.version = 0x00;
-    msg.end_byte = 0x7d;
+    msg.start_byte    = BINARY_MODE_START_BYTE;
+    msg.gps_sensor_id = GPS_SENSOR_ID;
+    msg.sensor_id     = GPS_SENSOR_TEXT_ID;
+    msg.version       = GPS_SENSOR_TYPE_GRAUPNER;
+    msg.end_byte      = BINARY_MODE_STOP_BYTE;
 
     (uint16_t &)msg.msl_altitude_L = ap_data.altitude / 100;  //meters above sea level  
     msg.flight_direction = ap_data.groundCourse / 200; // in 2* steps
@@ -834,7 +833,7 @@ void hott_eam_check_mAh(void) {
         _hott_ema_alarm_event.visual_alarm1 = 0x01; //blink mAh
         _hott_ema_alarm_event.visual_alarm2 = 0;
         _hott_ema_alarm_event.alarm_num = HOTT_ALARM_NUM('V');
-        _hott_ema_alarm_event.alarm_profile = HOTT_TELEMETRY_EAM_SENSOR_ID;
+        _hott_ema_alarm_event.alarm_profile = EAM_SENSOR_ID;
         _hott_add_alarm(&_hott_ema_alarm_event);
     }
 }
@@ -858,7 +857,7 @@ void hott_eam_check_mainPower(void){
         _hott_ema_alarm_event.visual_alarm1 = 0x80; //blink main power
         _hott_ema_alarm_event.visual_alarm2 = 0;
         _hott_ema_alarm_event.alarm_num = HOTT_ALARM_NUM('P');
-        _hott_ema_alarm_event.alarm_profile = HOTT_TELEMETRY_EAM_SENSOR_ID;
+        _hott_ema_alarm_event.alarm_profile = EAM_SENSOR_ID;
 
         if(_hott_add_alarm(&_hott_ema_alarm_event)) {
 //          warnx("adding battery alarm");          
