@@ -385,7 +385,7 @@ struct HOTT_GPS_MSG {
                           // 0   GPS Graupner #33600
                           // 1   Gyro Receiver
                           // 255 Mikrokopter
-    int8_t end_byte;      //#44 constant value 0x7d
+    int8_t stop_byte;      //#44 constant value 0x7d
     int8_t parity;        //#45
 };
 

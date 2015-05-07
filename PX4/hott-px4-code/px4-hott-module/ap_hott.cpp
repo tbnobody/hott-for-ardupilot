@@ -471,13 +471,13 @@ void hott_send_vario_msgs(int uart) {
     msg.sensor_id       = VARIO_SENSOR_TEXT_ID;
     msg.stop_byte       = BINARY_MODE_STOP_BYTE;
     
-    (uint16_t &)msg.altitude_L = (ap_data.altitude_rel / 100)+500;  //send relative altitude
+    (uint16_t &)msg.altitude_L = (ap_data.altitude_rel / 100) + 500;  //send relative altitude
     //update alt. statistic
-    if( ap_data.altitude_rel > max_altitude && ap_data.motor_armed) //calc only in ARMED mode
+    if(ap_data.altitude_rel > max_altitude && ap_data.motor_armed) //calc only in ARMED mode
         max_altitude = ap_data.altitude_rel;
     (int16_t &)msg.altitude_max_L = (max_altitude / 100)+500;
 
-    if( ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
+    if(ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
         min_altitude = ap_data.altitude_rel;
     (int16_t &)msg.altitude_min_L = (min_altitude / 100)+500;
 
@@ -506,7 +506,7 @@ void hott_send_vario_msgs(int uart) {
 
 void hott_send_eam_msg(int uart) {
     struct HOTT_EAM_MSG msg;
-    static _hott_alarm_event e = {0,0,0,0,0,0}; //used to save visual alarm states
+    static _hott_alarm_event e = {0, 0, 0, 0, 0, 0}; //used to save visual alarm states
 
     memset(&msg, 0, sizeof(struct HOTT_EAM_MSG));
     msg.start_byte    = BINARY_MODE_START_BYTE;
@@ -568,7 +568,7 @@ void hott_send_gps_msg(int uart) {
     msg.gps_sensor_id = GPS_SENSOR_ID;
     msg.sensor_id     = GPS_SENSOR_TEXT_ID;
     msg.version       = GPS_SENSOR_TYPE_GRAUPNER;
-    msg.end_byte      = BINARY_MODE_STOP_BYTE;
+    msg.stop_byte     = BINARY_MODE_STOP_BYTE;
 
     (uint16_t &)msg.msl_altitude_L = ap_data.altitude / 100;  //meters above sea level  
     msg.flight_direction = ap_data.groundCourse / 200; // in 2* steps
@@ -646,7 +646,7 @@ void hott_send_gps_msg(int uart) {
 //
 bool _hott_alarm_active_exists(struct _hott_alarm_event_T *alarm) {
     //check active alarms
-    for(uint8_t i=0; i<_hott_alarmCnt; i++) {
+    for(uint8_t i = 0; i < _hott_alarmCnt; i++) {
         if(_hott_alarm_queue[i].alarm_num == alarm->alarm_num &&
             _hott_alarm_queue[i].alarm_profile == alarm->alarm_profile) {
             //alarm exists.
@@ -661,7 +661,7 @@ bool _hott_alarm_active_exists(struct _hott_alarm_event_T *alarm) {
 //
 bool _hott_alarm_replay_exists(struct _hott_alarm_event_T *alarm) {
     //check replay delay queue
-    for(uint8_t i=0; i<_hott_alarm_ReplayCnt; i++) {
+    for(uint8_t i = 0; i < _hott_alarm_ReplayCnt; i++) {
         if(_hott_alarm_replay_queue[i].alarm_num == alarm->alarm_num &&
             _hott_alarm_replay_queue[i].alarm_profile == alarm->alarm_profile) {
             //alarm exists
@@ -734,7 +734,7 @@ void _hott_remove_replay_alarm(uint8_t num) {
         return; // possibile error
 
     if(_hott_alarm_ReplayCnt != 1) {
-        memcpy(&_hott_alarm_replay_queue[num-1], &_hott_alarm_replay_queue[num], sizeof(struct _hott_alarm_event_T) * (_hott_alarm_ReplayCnt - num) );
+        memcpy(&_hott_alarm_replay_queue[num - 1], &_hott_alarm_replay_queue[num], sizeof(struct _hott_alarm_event_T) * (_hott_alarm_ReplayCnt - num) );
     }
     --_hott_alarm_ReplayCnt;
 }
@@ -743,7 +743,7 @@ void _hott_remove_replay_alarm(uint8_t num) {
 // Updates replay delay queue
 //
 void hott_update_replay_queue(void) {
-    for(uint8_t i=0; i< _hott_alarm_ReplayCnt; i++) {
+    for(uint8_t i = 0; i <  _hott_alarm_ReplayCnt; i++) {
         if(--_hott_alarm_replay_queue[i].alarm_time_replay == 0) {
             //remove it
             _hott_remove_replay_alarm(i+1);
@@ -758,7 +758,7 @@ uint8_t getAlarmForProfileId(uint8_t hottProfileId, _hott_alarm_event &e) {
         return 0;
 
     uint8_t alarmCount = 0;
-    for(int i=0; i< _hott_alarmCnt; i++) {
+    for(int i = 0; i <  _hott_alarmCnt; i++) {
         if(_hott_alarm_queue[i].alarm_profile == hottProfileId) {
             e.visual_alarm1 |= _hott_alarm_queue[i].visual_alarm1;
             e.visual_alarm2 |= _hott_alarm_queue[i].visual_alarm2;
@@ -796,7 +796,7 @@ void hott_alarm_scheduler(void) {
 
     if(activeAlarm != 0) { //is an alarm active
         if ( ++activeAlarmTimer % 2 == 0 ) {    //every 1sec
-            _hott_alarm_queue[activeAlarm-1].alarm_time--;
+            _hott_alarm_queue[activeAlarm - 1].alarm_time--;
         }
         if ( activeAlarmTimer < 50 * 2) //alter alarm every 2 sec
             return;
