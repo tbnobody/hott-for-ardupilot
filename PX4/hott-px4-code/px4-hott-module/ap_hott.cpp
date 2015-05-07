@@ -486,7 +486,7 @@ void hott_send_vario_msgs(int uart) {
 	(int16_t &)msg.climbrate3s_L = 30000 + climbrate3s;
 	(int16_t &)msg.climbrate10s_L = 30000 + climbrate10s;
 	
-	msg.compass_direction = ap_data.angle_compas;
+	msg.compass_direction = ap_data.angle_compas / 2;
 	
 	//Free text processing
 	if(ap_data.control_mode > NUM_MODES)
@@ -568,7 +568,7 @@ void hott_send_gps_msg(int uart) {
 
 	memset(&msg, 0, sizeof(struct HOTT_GPS_MSG));
 	msg.start_byte = 0x7c;
-	msg.gps_sensor_id = 0x8a;
+	msg.gps_sensor_id = HOTT_TELEMETRY_GPS_SENSOR_ID;
 	msg.sensor_id = 0xa0;
 	msg.version = 0x00;
 	msg.end_byte = 0x7d;
