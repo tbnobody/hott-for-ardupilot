@@ -463,7 +463,7 @@ void hott_send_vario_msgs(int uart) {
 
     struct HOTT_VARIO_MSG msg;
     static int16_t max_altitude = 0;
-    static int16_t min_altitude = 0;
+    static int16_t min_altitude = INT16_MAX;
 
     memset(&msg, 0, sizeof(struct HOTT_VARIO_MSG));
     msg.start_byte      = BINARY_MODE_START_BYTE;
@@ -475,11 +475,16 @@ void hott_send_vario_msgs(int uart) {
     //update alt. statistic
     if(ap_data.altitude_rel > max_altitude && ap_data.motor_armed) //calc only in ARMED mode
         max_altitude = ap_data.altitude_rel;
-    (int16_t &)msg.altitude_max_L = (max_altitude / 100)+500;
+    (int16_t &)msg.altitude_max_L = (max_altitude / 100) + 500;
 
     if(ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
         min_altitude = ap_data.altitude_rel;
-    (int16_t &)msg.altitude_min_L = (min_altitude / 100)+500;
+    
+    if (min_altitude == INT16_MAX) {
+    	(int16_t &)msg.altitude_min_L = 0;
+    } else {
+        (int16_t &)msg.altitude_min_L = (min_altitude / 100) + 500;
+    }
 
     (int16_t &)msg.climbrate_L    = 30000 + climbrate1s;
     (int16_t &)msg.climbrate3s_L  = 30000 + climbrate3s;
