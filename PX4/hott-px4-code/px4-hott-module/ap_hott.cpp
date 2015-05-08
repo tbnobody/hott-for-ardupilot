@@ -465,27 +465,26 @@ void hott_send_vario_msgs(int uart) {
     static int16_t max_altitude = 0;
     static int16_t min_altitude = 0;
 
+    //update alt. statistic
+    if(ap_data.altitude_rel > max_altitude && ap_data.motor_armed) //calc only in ARMED mode
+        max_altitude = ap_data.altitude_rel;
+
+    if(ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
+        min_altitude = ap_data.altitude_rel;
+
     memset(&msg, 0, sizeof(struct HOTT_VARIO_MSG));
     msg.start_byte      = BINARY_MODE_START_BYTE;
     msg.vario_sensor_id = VARIO_SENSOR_ID;
     msg.sensor_id       = VARIO_SENSOR_TEXT_ID;
     msg.stop_byte       = BINARY_MODE_STOP_BYTE;
     
-    (uint16_t &)msg.altitude_L = (ap_data.altitude_rel / 100) + 500;  //send relative altitude
-    //update alt. statistic
-    if(ap_data.altitude_rel > max_altitude && ap_data.motor_armed) //calc only in ARMED mode
-        max_altitude = ap_data.altitude_rel;
-    (int16_t &)msg.altitude_max_L = (max_altitude / 100) + 500;
-
-    if(ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
-        min_altitude = ap_data.altitude_rel;
-    (int16_t &)msg.altitude_min_L = (min_altitude / 100) + 500;
-
+    (uint16_t &)msg.altitude_L    = 500   + (ap_data.altitude_rel / 100);  //send relative altitude
+    (int16_t &)msg.altitude_max_L = 500   + (max_altitude / 100);
+    (int16_t &)msg.altitude_min_L = 500   + (min_altitude / 100);
     (int16_t &)msg.climbrate_L    = 30000 + climbrate1s;
     (int16_t &)msg.climbrate3s_L  = 30000 + climbrate3s;
     (int16_t &)msg.climbrate10s_L = 30000 + climbrate10s;
-
-    msg.compass_direction = ap_data.angle_compas / 2;
+    msg.compass_direction         = ap_data.angle_compas / 2;
 
     //Free text processing
     if(ap_data.control_mode > NUM_MODES)
@@ -495,11 +494,12 @@ void hott_send_vario_msgs(int uart) {
     if (ap_data.motor_armed) {
         pArmedStr = (char *)ARMED_STR;
     }
+    
     //clear line
     memset(msg.text_msg, 0x20, VARIO_MSG_TEXT_LEN);
     uint8_t len = strlen(pArmedStr);
     memcpy((uint8_t*)msg.text_msg, pArmedStr, len);
-    memcpy((uint8_t*)&msg.text_msg[len+1], hott_flight_mode_strings[ap_data.control_mode], strlen(hott_flight_mode_strings[ap_data.control_mode]));
+    memcpy((uint8_t*)&msg.text_msg[len + 1], hott_flight_mode_strings[ap_data.control_mode], strlen(hott_flight_mode_strings[ap_data.control_mode]));
 
     send_data(uart, (uint8_t *)&msg, sizeof(struct HOTT_VARIO_MSG));
 }
@@ -515,16 +515,16 @@ void hott_send_eam_msg(int uart) {
     msg.stop_byte     = BINARY_MODE_STOP_BYTE;
 
     (uint16_t &)msg.main_voltage_L = (uint16_t)(battery.voltage_v * (float)10.0);
-    (uint16_t &)msg.current_L = (uint16_t)(battery.current_a * (float)10.0);
-    (uint16_t &)msg.batt_cap_L = (uint16_t)(battery.discharged_mah / (float)10.0);
-    msg.temp1 = ap_data.temperature1 + 20;
-    msg.temp2 = ap_data.temperature2 + 20;
-    (int16_t &)msg.altitude_L = (ap_data.altitude_rel / 100) + 500;
-    (uint16_t &)msg.speed_L = ap_data.groundSpeed;
-    (uint16_t &)msg.climbrate_L = climbrate1s + 30000;
-    msg.climbrate3s = 120 + (climbrate3s / 100);  // 0 m/3s using filtered data here
+    (uint16_t &)msg.current_L      = (uint16_t)(battery.current_a * (float)10.0);
+    (uint16_t &)msg.batt_cap_L     = (uint16_t)(battery.discharged_mah / (float)10.0);
+    msg.temp1                      = 20    + ap_data.temperature1;
+    msg.temp2                      = 20    + ap_data.temperature2;
+    msg.climbrate3s                = 120   + (climbrate3s / 100);  // 0 m/3s using filtered data here
+    (uint16_t &)msg.climbrate_L    = 30000 + climbrate1s;
+    (int16_t &)msg.altitude_L      = 500   + (ap_data.altitude_rel / 100);
+    (uint16_t &)msg.speed_L        = ap_data.groundSpeed;
     
-    //Electric time. TIme the APM is ARMED
+    //Electric time. Time the APM is ARMED
     msg.electric_min = electric_time / 60;
     msg.electric_sec = electric_time % 60;
          
@@ -540,6 +540,7 @@ void hott_send_eam_msg(int uart) {
     } else {
         msg.alarm_invers2 &= 0x7f;
     }
+
     send_data(uart, (uint8_t *)&msg, sizeof(struct HOTT_EAM_MSG));
 }
 
@@ -571,19 +572,30 @@ void hott_send_gps_msg(int uart) {
     msg.stop_byte     = BINARY_MODE_STOP_BYTE;
 
     (uint16_t &)msg.msl_altitude_L = ap_data.altitude / 100;  //meters above sea level  
-    msg.flight_direction = ap_data.groundCourse / 200; // in 2* steps
-    (uint16_t &)msg.gps_speed_L = (uint16_t)ap_data.groundSpeed;
+    msg.flight_direction           = ap_data.groundCourse / 200; // in 2* steps
+    (uint16_t &)msg.gps_speed_L    = (uint16_t)ap_data.groundSpeed;
     
-    if(ap_data.gps_sat_fix == AP_GPS::GPS_OK_FIX_3D) { //see GPS class
-        msg.alarm_invers2 = 0;
-        msg.gps_fix_char = '3';  
-        msg.free_char3 = '3';  //3D Fix according to specs...
-    } else {
-        //No GPS Fix
-        msg.alarm_invers2 = 1;
-        msg.gps_fix_char = '-';
-        msg.free_char3 = '-';
-        (uint16_t &)msg.home_distance_L = 0; // set distance to 0 since there is no GPS signal
+    switch(ap_data.gps_sat_fix) {
+    	case AP_GPS::GPS_OK_FIX_3D:
+            msg.alarm_invers2 = 0;
+            msg.gps_fix_char  = '3';  
+            msg.free_char3    = '3';  //3D Fix according to specs...
+    		break;
+
+    	case AP_GPS::GPS_OK_FIX_2D:
+    		//No GPS Fix
+	        msg.alarm_invers2 = 1;
+	        msg.gps_fix_char  = '2';
+	        msg.free_char3    = '2';
+	        (uint16_t &)msg.home_distance_L = 0; // set distance to 0 since there is no GPS signal
+    		break;
+
+    	default:
+	    	//No GPS Fix
+	        msg.alarm_invers2 = 1;
+	        msg.gps_fix_char  = '-';
+	        msg.free_char3    = '-';
+	        (uint16_t &)msg.home_distance_L = 0; // set distance to 0 since there is no GPS signal
     }
 
     switch(ap_data.control_mode) {    //see ArduCopter/defines.h for possible values
@@ -593,10 +605,10 @@ void hott_send_gps_msg(int uart) {
             //Use home direction field to display direction an distance to next waypoint
             {
                 (uint16_t &)msg.home_distance_L = ap_data.wp_distance / 100;
-                msg.home_direction = ap_data.wp_direction / 200;
+                msg.home_direction              = ap_data.wp_direction / 200;
                 //Display WP to mark the change of meaning!
-                msg.free_char1 ='W';
-                msg.free_char2 ='P';
+                msg.free_char1 = 'W';
+                msg.free_char2 = 'P';
             }
             break;
 
@@ -604,7 +616,7 @@ void hott_send_gps_msg(int uart) {
             //Display Home direction and distance
             {
                 (uint16_t &)msg.home_distance_L = ap_data.home_distance / 100;
-                msg.home_direction = ap_data.home_direction / 200;
+                msg.home_direction              = ap_data.home_direction / 200;
                 msg.free_char1 = 0;
                 msg.free_char2 = 0;
                 break;
@@ -614,15 +626,15 @@ void hott_send_gps_msg(int uart) {
     convertLatLong(ap_data.latitude, (uint8_t &)msg.pos_NS, (uint16_t &)msg.pos_NS_dm_L, (uint16_t &)msg.pos_NS_sec_L);
     convertLatLong(ap_data.longitude, (uint8_t &)msg.pos_EW, (uint16_t &)msg.pos_EW_dm_L, (uint16_t &)msg.pos_EW_sec_L);
 
-    (uint16_t &)msg.altitude_L = (ap_data.altitude_rel / 100)+500;  //meters above ground
+    (uint16_t &)msg.altitude_L = 500   + (ap_data.altitude_rel / 100);  //meters above ground
     (int16_t &)msg.climbrate_L = 30000 + climbrate1s;  
-    msg.climbrate3s = 120 + (climbrate3s / 100);  // 0 m/3s
-    msg.gps_satelites = ap_data.satelites;
+    msg.climbrate3s            = 120   + (climbrate3s / 100);  // 0 m/3s
+    msg.gps_satelites          = ap_data.satelites;
     
-    msg.angle_roll = ap_data.angle_roll / 200;
-    msg.angle_nick = ap_data.angle_nick / 200;
+    msg.angle_roll             = ap_data.angle_roll / 200;
+    msg.angle_nick             = ap_data.angle_nick / 200;
   
-    msg.angle_compass = ap_data.angle_compas / 2;
+    msg.angle_compass          = ap_data.angle_compas / 2;
     //hott_gps_msg.flight_direction = hott_gps_msg.angle_compass;   //
 
     uint32_t t = ap_data.utc_time;
