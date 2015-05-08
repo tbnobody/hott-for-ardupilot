@@ -117,9 +117,16 @@ void userhook_SlowLoop()
 
 	apData.temperature1 = barometer.get_temperature();
 	apData.temperature2 = 0;
-	apData.altitude = gps.location().alt;
-	apData.altitude_rel = current_loc.alt - ahrs.get_home().alt;	//in cm
-	apData.groundSpeed = ((float)((gps.ground_speed()) * 0.036));
+
+	if (current_loc.flags.relative_alt) {
+        apData.altitude = current_loc.alt + ahrs.get_home().alt;
+        apData.altitude_rel = current_loc.alt;
+    } else {
+        apData.altitude = current_loc.alt;
+        apData.altitude_rel = current_loc.alt - ahrs.get_home().alt;
+    }
+
+	apData.groundSpeed = ((float)((gps.ground_speed()) * 3.6));
 	apData.groundCourse = gps.ground_course_cd();
 	apData.climbrate = climb_rate;
 	
