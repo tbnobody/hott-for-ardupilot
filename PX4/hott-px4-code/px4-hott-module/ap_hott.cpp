@@ -329,16 +329,16 @@ void processClimbrate(int16_t currentAltitude) {
     if(!gotAllDatapoints)   //wait for all data points requred for calculation
         return;
     
-    int8_t y = (x - 1 < 0) ? ALTITUDE_HISTORY_DATA_COUNT - 1 : x -1;
-    climbrate1s = altitudeData[y] - altitudeData[x];
+    int8_t y = (x - 1 < 0) ? ALTITUDE_HISTORY_DATA_COUNT - 1 : x - 1;
+    climbrate1s = altitudeData[x] - altitudeData[y];
 
-    y = (x - 2 < 0) ? ALTITUDE_HISTORY_DATA_COUNT + (x-2) : x - 2;
-    climbrate3s = altitudeData[y] - altitudeData[x];
+    y = (x - 2 < 0) ? ALTITUDE_HISTORY_DATA_COUNT + (x - 2) : x - 2;
+    climbrate3s = altitudeData[x] - altitudeData[y];
 
 #if ALTITUDE_HISTORY_DATA_COUNT != 10
 #error "ALTITUDE_HISTORY_DATA_COUNT has to be 10... or adapt the code below!"
 #endif
-    climbrate10s = altitudeData[nextData] - altitudeData[x];
+    climbrate10s = altitudeData[x] - altitudeData[nextData];
 }
 
 int ap_hott_thread_main(int argc, char *argv[]) {
@@ -463,7 +463,7 @@ void hott_send_vario_msgs(int uart) {
 
     struct HOTT_VARIO_MSG msg;
     static int16_t max_altitude = 0;
-    static int16_t min_altitude = INT16_MAX;
+    static int16_t min_altitude = 0;
 
     memset(&msg, 0, sizeof(struct HOTT_VARIO_MSG));
     msg.start_byte      = BINARY_MODE_START_BYTE;
@@ -479,12 +479,7 @@ void hott_send_vario_msgs(int uart) {
 
     if(ap_data.altitude_rel < min_altitude && ap_data.motor_armed) //calc only in ARMED mode
         min_altitude = ap_data.altitude_rel;
-    
-    if (min_altitude == INT16_MAX) {
-    	(int16_t &)msg.altitude_min_L = 0;
-    } else {
-        (int16_t &)msg.altitude_min_L = (min_altitude / 100) + 500;
-    }
+    (int16_t &)msg.altitude_min_L = (min_altitude / 100) + 500;
 
     (int16_t &)msg.climbrate_L    = 30000 + climbrate1s;
     (int16_t &)msg.climbrate3s_L  = 30000 + climbrate3s;
