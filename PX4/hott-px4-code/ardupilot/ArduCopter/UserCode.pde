@@ -73,31 +73,30 @@ void userhook_SlowLoop()
     // put your 3.3Hz code here
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
 	struct battery_status_s bs;
-	bs.timestamp = hal.scheduler->micros();
-	bs.voltage_v = battery.voltage();
-	bs.current_a = battery.current_amps();
+	bs.timestamp      = hal.scheduler->micros();
+	bs.voltage_v      = battery.voltage();
+	bs.current_a      = battery.current_amps();
 	bs.discharged_mah = battery.current_total_mah();
-	
 	orb_publish(ORB_ID(battery_status), hBatteryTopic, &bs);
 	
 	struct sensor_combined_s sen;
 	memset(&sen,0,sizeof(sen));
-	sen.timestamp = hal.scheduler->micros();
-	sen.baro_pres_mbar = barometer.get_pressure() / 100;
-	sen.baro_alt_meter = baro_alt;
+	sen.timestamp         = hal.scheduler->micros();
+	sen.baro_pres_mbar    = barometer.get_pressure() / 100;
+	sen.baro_alt_meter    = baro_alt;
 	sen.baro_temp_celcius = barometer.get_temperature();
-	sen.mcu_temp_celcius = 0;
+	sen.mcu_temp_celcius  = 0;
 	orb_publish(ORB_ID(sensor_combined), hSensorsTopic, &sen);
 	
 	struct ap_data_s apData;
 	memset(&apData, 0, sizeof(apData));
-	apData.timestamp = hal.scheduler->micros();
+	apData.timestamp  = hal.scheduler->micros();
 	apData.battery1_v = 0;
 	apData.battery2_v = 0;
 	
-	enum ap_var_type	var_type;
-	AP_Param      *vp;
-	vp =AP_Param::find("BATT_CAPACITY", &var_type);
+	enum ap_var_type var_type;
+	AP_Param *vp;
+	vp = AP_Param::find("BATT_CAPACITY", &var_type);
 	if(vp != NULL) {
 		if(var_type == AP_PARAM_INT32) {
 			apData.battery_pack_capacity = ((AP_Int32 *)vp)->get();
@@ -126,27 +125,27 @@ void userhook_SlowLoop()
         apData.altitude_rel = current_loc.alt - ahrs.get_home().alt;
     }
 
-	apData.groundSpeed = ((float)((gps.ground_speed()) * 3.6));
+	apData.groundSpeed  = ((float)((gps.ground_speed()) * 3.6));
 	apData.groundCourse = gps.ground_course_cd();
-	apData.climbrate = climb_rate;
+	apData.climbrate    = climb_rate;
 	
-	apData.motor_armed = motors.armed();
+	apData.motor_armed  = motors.armed();
 	apData.control_mode = control_mode;
 	
-	apData.home_distance = home_distance; //in cm
-	apData.home_direction = home_bearing; //in centi-degrees
+	apData.home_distance  = home_distance; //in cm
+	apData.home_direction = home_bearing;  //in centi-degrees
 
-	apData.wp_distance = wp_distance; //in cm
-	apData.wp_direction = wp_bearing; //in centi-degrees
+	apData.wp_distance  = wp_distance; //in cm
+	apData.wp_direction = wp_bearing;  //in centi-degrees
 
-	apData.latitude = gps.location().lat;
-	apData.longitude = gps.location().lng;
-	apData.satelites = gps.num_sats();
-	apData.gps_sat_fix = gps.status();
-	apData.angle_roll = ahrs.roll_sensor;
-	apData.angle_nick = ahrs.pitch_sensor;
+	apData.latitude     = gps.location().lat;
+	apData.longitude    = gps.location().lng;
+	apData.satelites    = gps.num_sats();
+	apData.gps_sat_fix  = gps.status();
+	apData.angle_roll   = ahrs.roll_sensor;
+	apData.angle_nick   = ahrs.pitch_sensor;
 	apData.angle_compas = ToDeg(compass.calculate_heading(ahrs.get_dcm_matrix())) ;
-	apData.utc_time = gps.time_week_ms() % (60 * 60 * 24 * 7);
+	apData.utc_time     = gps.time_week_ms() % (60 * 60 * 24 * 7);
 
 	orb_publish(ORB_ID(ap_data), hApDataTopic, &apData);
 	
