@@ -140,7 +140,7 @@ struct battery_status_s battery;
 struct sensor_combined_s sensors;
 struct ap_data_s ap_data;
 
-#define NUM_MODES   17
+#define NUM_MODES   18
 const char hott_flight_mode_strings[NUM_MODES+1][10] = {
     "STABILIZE",    // 0
     "ACRO",         // 1
@@ -150,7 +150,7 @@ const char hott_flight_mode_strings[NUM_MODES+1][10] = {
     "LOITER",       // 5
     "RTL",          // 6
     "CIRCLE",       // 7
-    "POSITION",     // 8
+    "???",          // 8
     "LAND",         // 9
     "OF_LOITER",    // 10
     "DRIFT",        // 11
@@ -158,7 +158,8 @@ const char hott_flight_mode_strings[NUM_MODES+1][10] = {
     "SPORT",        // 13
     "FLIP",         // 14
     "AUTOTUNE",     // 15
-    "HYBRID",       // 16
+    "POSHOLD",      // 16
+    "BRAKE",        // 17
     "???"
 };
 
