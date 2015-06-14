@@ -7,7 +7,7 @@
 #
 ROMFS_ROOT	 = $(SKETCHBOOK)/mk/PX4/ROMFS
 MODULES		+= $(APM_MODULE_DIR)
-MODULES		+= ./../../hott-px4-code/px4-hott-module
+MODULES		+= ./../../../../hott-px4-code/px4-hott-module
 
 #
 # Board support modules
@@ -43,7 +43,6 @@ MODULES		+= drivers/batt_smbus
 # System commands
 #
 MODULES		+= systemcmds/bl_update
-MODULES		+= systemcmds/boardinfo
 MODULES		+= systemcmds/mixer
 MODULES		+= systemcmds/perf
 MODULES		+= systemcmds/pwm

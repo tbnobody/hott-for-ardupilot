@@ -1,5 +1,7 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+#include "Copter.h"
+
 //HoTT for PX4 only
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
 #include <nuttx/config.h>
@@ -22,7 +24,7 @@ orb_advert_t hApDataTopic;
 #endif
 
 #ifdef USERHOOK_INIT
-void userhook_init()
+void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
@@ -47,28 +49,28 @@ void userhook_init()
 #endif
 
 #ifdef USERHOOK_FASTLOOP
-void userhook_FastLoop()
+void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
 }
 #endif
 
 #ifdef USERHOOK_50HZLOOP
-void userhook_50Hz()
+void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
 }
 #endif
 
 #ifdef USERHOOK_MEDIUMLOOP
-void userhook_MediumLoop()
+void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
 }
 #endif
 
 #ifdef USERHOOK_SLOWLOOP
-void userhook_SlowLoop()
+void Copter::userhook_SlowLoop()
 {
     // put your 3.3Hz code here
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
@@ -154,7 +156,7 @@ void userhook_SlowLoop()
 #endif
 
 #ifdef USERHOOK_SUPERSLOWLOOP
-void userhook_SuperSlowLoop()
+void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
 }

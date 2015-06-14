@@ -42,7 +42,6 @@ v2-upload:
 
 px4-hott:
 	cp -Rv hott-px4-code/ardupilot/* ardupilot
-	cp -Rv hott-px4-code/PX4Firmware/* PX4Firmware
 
 dist-hexa: hexa
 	mkdir -p dist

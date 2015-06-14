@@ -266,7 +266,7 @@ int ap_hott_main(int argc, char *argv[])
             exit(0);
         }
         thread_should_exit = false;
-        ap_hott_task = task_spawn_cmd("ap_hott",
+        ap_hott_task = px4_task_spawn_cmd("ap_hott",
             SCHED_DEFAULT,
             SCHED_PRIORITY_MAX - 5,
             2048,
